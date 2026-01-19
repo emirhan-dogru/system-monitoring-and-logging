@@ -1,0 +1,19 @@
+{
+  "projectName": "Monitoring & Logging Panel",
+  "category": "Service Management",
+  "author": "Emirhan Doğru",
+  "version": "1.0.0",
+  "description": "Cross-platform sistem servisleri izleme ve log yönetim paneli. Hem Linux (systemd/journalctl) hem Windows (Services/Event Log) destekler.",
+  "features": [
+    "Servis durumu izleme (aktif/pasif)",
+    "Log toplama ve filtreleme (ERROR, WARNING)",
+    "Kritik servis uyarıları",
+    "Modern web dashboard",
+    "Real-time updates",
+    "Cross-platform destek"
+  ],
+  "requirements": {
+    "os": "Ubuntu 22.04 / Windows 10+",
+    "language": "Python 3.10"
+  }
+}

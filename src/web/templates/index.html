@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring & Logging Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-chart-line"></i>
+                <span>Monitor</span>
+            </div>
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item active" data-tab="dashboard">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </li>
+            <li class="nav-item" data-tab="services">
+                <i class="fas fa-server"></i>
+                <span>Servisler</span>
+            </li>
+            <li class="nav-item" data-tab="logs">
+                <i class="fas fa-file-alt"></i>
+                <span>Loglar</span>
+            </li>
+            <li class="nav-item" data-tab="alerts">
+                <i class="fas fa-bell"></i>
+                <span>Uyarılar</span>
+                <span class="badge" id="alert-badge">0</span>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="platform-info">
+                <i class="fas fa-desktop"></i>
+                <span id="platform-name">Loading...</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1 id="page-title">Dashboard</h1>
+                <span class="last-update">Son güncelleme: <span id="last-update-time">-</span></span>
+            </div>
+            <div class="header-right">
+                <button class="btn-refresh" onclick="refreshData()">
+                    <i class="fas fa-sync-alt"></i>
+                    Yenile
+                </button>
+            </div>
+        </header>
+
+        <!-- Dashboard Tab -->
+        <section id="dashboard-tab" class="tab-content active">
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card running">
+                    <div class="stat-icon">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="stat-running">0</h3>
+                        <p>Çalışan</p>
+                    </div>
+                </div>
+                <div class="stat-card stopped">
+                    <div class="stat-icon">
+                        <i class="fas fa-stop-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="stat-stopped">0</h3>
+                        <p>Durmuş</p>
+                    </div>
+                </div>
+                <div class="stat-card errors">
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="stat-errors">0</h3>
+                        <p>Hatalar</p>
+                    </div>
+                </div>
+                <div class="stat-card alerts">
+                    <div class="stat-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="stat-alerts">0</h3>
+                        <p>Uyarılar</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3><i class="fas fa-chart-pie"></i> Servis Durumu</h3>
+                    <canvas id="service-chart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3><i class="fas fa-chart-bar"></i> Log Dağılımı</h3>
+                    <canvas id="log-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Recent Alerts -->
+            <div class="recent-section">
+                <h3><i class="fas fa-bell"></i> Son Uyarılar</h3>
+                <div class="alert-list" id="recent-alerts">
+                    <div class="empty-state">
+                        <i class="fas fa-check-circle"></i>
+                        <p>Aktif uyarı yok</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Services Tab -->
+        <section id="services-tab" class="tab-content">
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>Durum:</label>
+                    <select id="service-filter" onchange="filterServices()">
+                        <option value="">Tümü</option>
+                        <option value="running">Çalışan</option>
+                        <option value="stopped">Durmuş</option>
+                        <option value="failed">Hatalı</option>
+                        <option value="critical">Kritik</option>
+                    </select>
+                </div>
+                <div class="search-group">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="service-search" placeholder="Servis ara..." oninput="searchServices()">
+                </div>
+            </div>
+
+            <!-- Services Grid -->
+            <div class="services-grid" id="services-list">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Yükleniyor...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Logs Tab -->
+        <section id="logs-tab" class="tab-content">
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>Seviye:</label>
+                    <select id="log-level-filter" onchange="filterLogs()">
+                        <option value="">Tümü</option>
+                        <option value="error">ERROR</option>
+                        <option value="warning">WARNING</option>
+                        <option value="info">INFO</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Limit:</label>
+                    <select id="log-limit" onchange="filterLogs()">
+                        <option value="50">50</option>
+                        <option value="100" selected>100</option>
+                        <option value="200">200</option>
+                    </select>
+                </div>
+                <div class="search-group">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="log-search" placeholder="Log ara..." oninput="searchLogs()">
+                </div>
+            </div>
+
+            <!-- Logs Table -->
+            <div class="logs-container">
+                <table class="logs-table">
+                    <thead>
+                        <tr>
+                            <th>Zaman</th>
+                            <th>Seviye</th>
+                            <th>Servis</th>
+                            <th>Mesaj</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-list">
+                        <tr>
+                            <td colspan="4" class="loading">
+                                <i class="fas fa-spinner fa-spin"></i> Yükleniyor...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Alerts Tab -->
+        <section id="alerts-tab" class="tab-content">
+            <div class="alerts-header">
+                <h3>Aktif Uyarılar</h3>
+                <div class="alerts-summary">
+                    <span class="critical-count" id="critical-count">0 Kritik</span>
+                    <span class="high-count" id="high-count">0 Yüksek</span>
+                </div>
+            </div>
+
+            <div class="alerts-list" id="alerts-list">
+                <div class="empty-state">
+                    <i class="fas fa-check-circle"></i>
+                    <p>Aktif uyarı yok</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
