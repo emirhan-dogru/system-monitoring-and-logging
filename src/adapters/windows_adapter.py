@@ -105,7 +105,9 @@ class WindowsAdapter:
                  'Get-Service | Select-Object Name, DisplayName, Status | ConvertTo-Json'],
                 capture_output=True,
                 text=True,
-                timeout=30
+                timeout=30,
+                encoding='utf-8',
+                errors='replace'
             )
             
             if result.returncode == 0 and result.stdout:
@@ -173,7 +175,9 @@ class WindowsAdapter:
                  f'Get-Service -Name "{service_name}" | Select-Object Name, DisplayName, Status | ConvertTo-Json'],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=10,
+                encoding='utf-8',
+                errors='replace'
             )
             
             if result.returncode == 0 and result.stdout:
@@ -289,8 +293,8 @@ class WindowsAdapter:
         logs = []
         
         try:
-            # PowerShell komutu oluştur
-            ps_cmd = f'Get-EventLog -LogName System -Newest {limit}'
+            # PowerShell komutu oluştur - UTF-8 encoding ile
+            ps_cmd = f'[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-EventLog -LogName System -Newest {limit}'
             
             if service:
                 ps_cmd += f' -Source "{service}"'
@@ -306,8 +310,9 @@ class WindowsAdapter:
             result = subprocess.run(
                 ['powershell', '-Command', ps_cmd],
                 capture_output=True,
-                text=True,
-                timeout=30
+                timeout=30,
+                encoding='utf-8',
+                errors='replace'
             )
             
             if result.returncode == 0 and result.stdout:
